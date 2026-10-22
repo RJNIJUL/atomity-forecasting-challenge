@@ -104,6 +104,46 @@ The underlying data contains anonymized VM workload telemetry sampled every five
 
 The challenge is intentionally open-ended. We evaluate reasoning, time-series methodology, leakage prevention, error analysis, reproducibility, and the quality of your operational conclusions—not just model complexity.
 
+
+## Solution
+
+The forecasting pipeline constructs two timestamp-level targets:
+
+- `active_vm_count`: number of unique VMs represented at each timestamp.
+- `aggregate_cpu_utilization`: mean VM-level `avg_cpu` across the VMs represented at each timestamp.
+
+The dataset contains 134 timestamps at five-minute intervals. The first 110 timestamps are used for development and model selection, while the final 24 timestamps are kept as an untouched holdout.
+
+### Validation
+
+Model selection uses chronological walk-forward validation with a 24-timestamp forecast horizon. No random train/test split or future target information is used.
+
+The following approaches were compared:
+
+- Persistence / rolling baselines
+- Random Forest using lag and rolling features
+- Ridge Regression using lag and rolling features
+- Exponential Smoothing
+
+Exponential Smoothing achieved the best average walk-forward performance:
+
+| Model | Average MAE | Average RMSE |
+|---|---:|---:|
+| 60-minute rolling mean | 0.2335 | 0.2613 |
+| Random Forest | 0.2286 | 0.2570 |
+| Ridge Regression | 0.2505 | 0.2780 |
+| Exponential Smoothing | **0.2208** | **0.2510** |
+
+The final model uses level-only Exponential Smoothing for aggregate CPU utilization. The active VM count is constant across the available timestamps, so the final forecast carries forward the latest observed count.
+
+### Reproduce predictions
+
+From the repository root, with the virtual environment activated:
+
+```powershell
+python -m cwfc.forecast --data challenge_data --output predictions.csv
+
+
 ## Expected environment
 
 Python 3.11+ is recommended.

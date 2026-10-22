@@ -2,3 +2,9 @@
 .venv/
 .pytest_cache/
 __pycache__/
+
+# Challenge data
+challenge_data/
+
+# Local prediction outputs
+predictions_reproduced.csv
